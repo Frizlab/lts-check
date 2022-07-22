@@ -1,0 +1,3 @@
+# Long Term Storage Check
+
+Create and check a db file containing all the files in a given folder recursively with a hash of them.
