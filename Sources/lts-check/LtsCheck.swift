@@ -1,28 +1,55 @@
 import Foundation
 
 import ArgumentParser
+import CLTLogger
+import Logging
 
 
 
 @main
 struct LtsCheck : AsyncParsableCommand {
 	
-	@Argument
-	var regexFilter: Regex<String>?
+	static /*lazy*/ var logger: Logger = {
+		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		
+		var ret = Logger(label: "main")
+		ret.logLevel = .debug
+		return ret
+	}()
+	
+	@Option @RegexByArg
+	var pathRegexFilter: NSRegularExpression? = nil
 	
 	func run() async throws {
+		if #available(macOS 13, *) {
+			Self.logger.info("Note to the dev: use Regex instead of NSRegularExpression!")
+		}
+		
+		
+	}
+	
+	struct Err : Error, CustomStringConvertible {
+		var message: String
+		var description: String {return message}
 	}
 	
 }
 
 
-extension Regex : ExpressibleByArgument {
+@propertyWrapper
+struct RegexByArg : ExpressibleByArgument {
 	
-	public init?(argument: String) {
-		guard let r = try? Self.init(argument) else {
+	var wrappedValue: NSRegularExpression?
+	
+	init(wrappedValue: NSRegularExpression?) {
+		self.wrappedValue = wrappedValue
+	}
+	
+	init?(argument: String) {
+		guard let regex = try? NSRegularExpression(pattern: argument, options: []) else {
 			return nil
 		}
-		self = r
+		self.wrappedValue = regex
 	}
 	
 }
