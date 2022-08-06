@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "stream-reader",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Frizlab/stream-reader.git",
+      "state" : {
+        "revision" : "09104092cb7e87dc6d1086d40c06d7606fc6cb94",
+        "version" : "3.2.3"
+      }
+    },
+    {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser.git",
