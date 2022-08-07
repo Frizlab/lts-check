@@ -19,11 +19,11 @@ final class LtsCheckTests : XCTestCase {
 	}
 	
 	func testSimpleUsage() throws {
-		let (exitCode, exitReason, stdout, stderr) = try runTargetExecutable("lts-check")
+		let (exitCode, exitReason, stdout, stderr) = try runTargetExecutable("lts-check", args: "--check-mode=data", "--action=check", "./db.ltsc", ".")
 		XCTAssertTrue(stdout.isEmpty)
-		XCTAssertFalse(stderr.isEmpty)
+		XCTAssertTrue(stderr.isEmpty)
 		XCTAssertEqual(exitReason, .exit)
-		XCTAssertNotEqual(exitCode, 0)
+		XCTAssertEqual(exitCode, 0)
 	}
 	
 }
