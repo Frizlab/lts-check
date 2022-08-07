@@ -17,11 +17,11 @@ extension XCTestCase {
 		let binaryURL = productsDirectory.appendingPathComponent(name)
 		
 		let process = Process()
-		if #available(macOS 13.0, *) {
-			process.currentDirectoryURL = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appending(component: "TestsData", directoryHint: .isDirectory)
-		} else {
+//		if #available(macOS 13.0, *) {
+//			process.currentDirectoryURL = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appending(component: "TestsData", directoryHint: .isDirectory)
+//		} else {
 			process.currentDirectoryURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("TestsData")
-		}
+//		}
 		process.executableURL = binaryURL
 		process.arguments = args
 		
