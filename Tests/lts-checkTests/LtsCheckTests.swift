@@ -10,7 +10,7 @@ import class Foundation.Bundle
 
 final class LtsCheckTests : XCTestCase {
 	
-	func testExample() throws {
+	func testNoArgs() throws {
 		let (exitCode, exitReason, stdout, stderr) = try runTargetExecutable("lts-check")
 		XCTAssertTrue(stdout.isEmpty)
 		XCTAssertFalse(stderr.isEmpty)
