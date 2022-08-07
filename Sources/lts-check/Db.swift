@@ -137,7 +137,9 @@ struct Db {
 					negativePathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) == nil
 			else {
 				LtsCheck.logger.debug("Skipping file", metadata: ["path": "\(relativePath)"])
-				enumerator.skipDescendants()
+				if isDirectory {
+					enumerator.skipDescendants()
+				}
 				continue
 			}
 			
