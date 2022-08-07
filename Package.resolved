@@ -44,6 +44,15 @@
         "revision" : "025bcb1165deab2e20d4eaba79967ce73013f496",
         "version" : "1.2.1"
       }
+    },
+    {
+      "identity" : "swiftyrelativepath",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/neoneye/SwiftyRelativePath.git",
+      "state" : {
+        "revision" : "36c56e0b3269d58ee46ced1eef797ca2bd65a818",
+        "version" : "1.0.0"
+      }
     }
   ],
   "version" : 2

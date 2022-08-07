@@ -6,6 +6,7 @@
 import Foundation
 
 import StreamReader
+import SwiftyRelativePath
 
 
 
@@ -25,7 +26,7 @@ struct Db {
 		}
 		
 		let fh = try FileHandle(forReadingFrom: URL(fileURLWithPath: dbPath))
-		try self.init(stream: FileHandleReader(stream: fh, bufferSize: 1024, bufferSizeIncrement: 512))
+		try self.init(stream: FileHandleReader(stream: fh, bufferSize: 5 * 1024, bufferSizeIncrement: 3 * 1024))
 	}
 	
 	init(stream: StreamReader) throws {
@@ -89,16 +90,47 @@ struct Db {
 	}
 	
 	@discardableResult
-	mutating func addEntries(from checkedPath: String, relativeRef: URL, pathRegexFilter: NSRegularExpression?, negativePathRegexFilter: NSRegularExpression?) throws -> Int {
+	mutating func addEntries(from checkedPath: String, relativeRef originalRelativeRef: URL, pathRegexFilter: NSRegularExpression?, negativePathRegexFilter: NSRegularExpression?) throws -> Int {
+		let relativeRef: URL
+		let originalRelativeRefIsDir = (try? originalRelativeRef.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+		if !originalRelativeRefIsDir {
+			relativeRef = originalRelativeRef.deletingLastPathComponent()
+			guard let parentIsDir = try relativeRef.resourceValues(forKeys: [.isDirectoryKey]).isDirectory else {
+				throw Err.cannotGetDirectoryStatus
+			}
+			guard parentIsDir else {
+				throw Err.internalError
+			}
+		} else {
+			relativeRef = originalRelativeRef
+		}
+		
 		let fm = FileManager.default
-		guard let enumerator = fm.enumerator(at: URL(fileURLWithPath: checkedPath), includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey, .creationDateKey]) else {
+		guard let enumerator = fm.enumerator(at: URL(fileURLWithPath: checkedPath), includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .creationDateKey]) else {
 			throw Err.cannotEnumerateFiles
 		}
 		var res = 0
 		for case let fileURL as URL in enumerator {
 			let isDirectory = try fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+			guard let isLink = try fileURL.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink else {
+				throw Err.cannotGetSymbolicLinkStatus
+			}
+			guard !isLink else {
+				LtsCheck.logger.debug("Skipping link", metadata: ["path": "\(fileURL.path)"])
+				continue
+			}
 			
-			let relativePath = fileURL.path /* TODO */
+			guard let unprefixedRelativePath = fileURL.absoluteURL.relativePath(from: relativeRef.absoluteURL) else {
+				throw Err.cannotGetRelativePath
+			}
+			assert(!unprefixedRelativePath.hasPrefix("/"))
+			let relativePath: String
+			if !unprefixedRelativePath.hasPrefix("../") {
+				relativePath = "./" + unprefixedRelativePath
+			} else {
+				relativePath = unprefixedRelativePath
+			}
+			
 			let relativePathNSRange = NSRange(location: 0, length: (relativePath as NSString).length)
 			guard pathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) != nil || pathRegexFilter == nil,
 					negativePathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) == nil

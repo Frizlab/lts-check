@@ -16,8 +16,12 @@ enum LtsCheckError : Error {
 	case cannotGetFileSize
 	case cannotGetCreationDate
 	case cannotGetDirectoryStatus
+	case cannotGetSymbolicLinkStatus
 	
 	case cannotEnumerateFiles
+	case cannotGetRelativePath
+	
+	case internalError
 	
 }
 
