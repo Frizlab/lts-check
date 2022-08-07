@@ -120,15 +120,16 @@ struct Db {
 				continue
 			}
 			
-			guard let unprefixedRelativePath = fileURL.absoluteURL.relativePath(from: relativeRef.absoluteURL) else {
+			guard let unModifiedRelativePath = fileURL.absoluteURL.relativePath(from: relativeRef.absoluteURL) else {
 				throw Err.cannotGetRelativePath
 			}
-			assert(!unprefixedRelativePath.hasPrefix("/"))
+			assert(!unModifiedRelativePath.hasPrefix("/"))
+			let addSlash = isDirectory && !unModifiedRelativePath.hasSuffix("/")
 			let relativePath: String
-			if !unprefixedRelativePath.hasPrefix("../") {
-				relativePath = "./" + unprefixedRelativePath
+			if !unModifiedRelativePath.hasPrefix("../") {
+				relativePath = "./" + unModifiedRelativePath + (addSlash ? "/" : "")
 			} else {
-				relativePath = unprefixedRelativePath
+				relativePath = unModifiedRelativePath + (addSlash ? "/" : "")
 			}
 			
 			let relativePathNSRange = NSRange(location: 0, length: (relativePath as NSString).length)
