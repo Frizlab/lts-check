@@ -147,6 +147,7 @@ struct Db {
 				continue
 			}
 			
+			LtsCheck.logger.debug("Computing and adding entry", metadata: ["path": "\(relativePath)"])
 			let entry = try DbEntry(relativePath: relativePath, relativeRef: relativeRef)
 			entries[relativePath] = entry
 			res += 1
