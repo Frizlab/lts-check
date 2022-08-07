@@ -86,10 +86,10 @@ struct LtsCheck : AsyncParsableCommand {
 	@Option
 	var forcedRelativeReference: String?
 	
-	@Argument
+	@Argument(completion: .file(extensions: ["ltsc"]))
 	var dbFilePath: String
 	
-	@Argument
+	@Argument(completion: .file())
 	var checkedPaths: [String]
 	
 	func run() async throws {
