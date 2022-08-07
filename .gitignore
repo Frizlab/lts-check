@@ -1,3 +1,6 @@
+# In this project, LTS-Check DB that are not persisted
+*.unpersisted.ltsc
+
 # Finder and Xcode
 .DS_Store
 xcuserdata/

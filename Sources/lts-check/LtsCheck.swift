@@ -105,8 +105,9 @@ struct LtsCheck : AsyncParsableCommand {
 			Self.logger.info("Note to the dev: use Regex instead of NSRegularExpression!")
 		}
 		
-		print(dbFilePath)
-		print(checkedPaths)
+		let db = try Db(dbPath: dbFilePath)
+		try db.write(to: dbFilePath)
+//		print(checkedPaths)
 	}
 	
 	struct Err : Error, CustomStringConvertible {
