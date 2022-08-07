@@ -105,9 +105,8 @@ struct LtsCheck : AsyncParsableCommand {
 		
 		switch action {
 			case .listFiles:
-				/* TODO: Read the db file directly maybe, to avoid having everything in memory. */
 				let db = try Db(dbPath: dbFilePath)
-				for (path, _) in db.entries {
+				for (path, _) in db.entries.sorted(by: { $0.key < $1.key }) {
 					print(path)
 				}
 				
