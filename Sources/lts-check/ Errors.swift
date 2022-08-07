@@ -13,6 +13,12 @@ enum LtsCheckError : Error {
 	case unsupportedDbVersion
 	case duplicatePathInDb(String)
 	
+	case cannotGetFileSize
+	case cannotGetCreationDate
+	case cannotGetDirectoryStatus
+	
+	case cannotEnumerateFiles
+	
 }
 
 typealias Err = LtsCheckError

@@ -14,7 +14,7 @@ struct Db {
 	/** Keys are relative paths. */
 	var entries: [String: DbEntry] = [:]
 	
-	init(entries: [String: DbEntry]) {
+	init(entries: [String: DbEntry] = [:]) {
 		self.entries = entries
 	}
 	
@@ -61,9 +61,8 @@ struct Db {
 	
 	func write(to dbPath: String) throws {
 		let fm = FileManager.default
-		if !fm.fileExists(atPath: dbPath) {
-			fm.createFile(atPath: dbPath, contents: nil)
-		}
+		if fm.fileExists(atPath: dbPath) {try fm.removeItem(atPath: dbPath)}
+		fm.createFile(atPath: dbPath, contents: nil)
 		
 		let fh = try FileHandle(forWritingTo: URL(fileURLWithPath: dbPath))
 		try write(to: fh)
@@ -82,6 +81,42 @@ struct Db {
 			try stream.write(contentsOf: jsonEncoder.encode(entry))
 			try stream.write(contentsOf: Self.separator)
 		}
+	}
+	
+	@discardableResult
+	mutating func addEntries(from checkedPaths: [String], relativeRef: URL, pathRegexFilter: NSRegularExpression?, negativePathRegexFilter: NSRegularExpression?) throws -> Int {
+		return try checkedPaths.reduce(0, { try $0 + addEntries(from: $1, relativeRef: relativeRef, pathRegexFilter: pathRegexFilter, negativePathRegexFilter: negativePathRegexFilter) })
+	}
+	
+	@discardableResult
+	mutating func addEntries(from checkedPath: String, relativeRef: URL, pathRegexFilter: NSRegularExpression?, negativePathRegexFilter: NSRegularExpression?) throws -> Int {
+		let fm = FileManager.default
+		guard let enumerator = fm.enumerator(at: URL(fileURLWithPath: checkedPath), includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey, .creationDateKey]) else {
+			throw Err.cannotEnumerateFiles
+		}
+		var res = 0
+		for case let fileURL as URL in enumerator {
+			let isDirectory = try fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+			
+			let relativePath = fileURL.path /* TODO */
+			let relativePathNSRange = NSRange(location: 0, length: (relativePath as NSString).length)
+			guard pathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) != nil || pathRegexFilter == nil,
+					negativePathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) == nil
+			else {
+				LtsCheck.logger.debug("Skipping file", metadata: ["path": "\(relativePath)"])
+				enumerator.skipDescendants()
+				continue
+			}
+			
+			guard !isDirectory, entries[relativePath] == nil else {
+				continue
+			}
+			
+			let entry = try DbEntry(relativePath: relativePath, relativeRef: relativeRef)
+			entries[relativePath] = entry
+			res += 1
+		}
+		return res
 	}
 	
 	private static let currentVersion = 1

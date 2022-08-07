@@ -17,7 +17,7 @@ struct LtsCheck : AsyncParsableCommand {
 	enum Action : String, ExpressibleByArgument {
 		
 		/** Only list the files in the db, one path per line. */
-		case listFiles
+		case listFiles = "list-files"
 		
 		/**
 		 Only check the db; report inconsistencies w/ actual files.
@@ -33,7 +33,7 @@ struct LtsCheck : AsyncParsableCommand {
 		 Check the db and add new files.
 		 
 		 Files missing in the fs are reported as missing and _not_ removed from the db. */
-		case checkAndUpdate
+		case checkAndUpdate = "check-and-update"
 		/**
 		 Check the db and add new files, and update files that are found to be inconsistent with the db.
 		 
@@ -41,29 +41,18 @@ struct LtsCheck : AsyncParsableCommand {
 		  except the files already in the db and consistent are only read once.
 		 
 		 Files that are missing from the fs _are_ removed from the db. */
-		case checkAndUpdateWithOverride
+		case checkAndUpdateWithOverride = "check-and-update-with-override"
 		
 		/** If a file is in the db but missing on the fs, remove it from the db. */
-		case removeMissingFiles
+		case removeMissingFiles = "remove-missing-files"
 		
-	}
-	
-	enum CheckMode : String, ExpressibleByArgument {
-		
-		/** Verify the files existence, their properties (size, modification date, other) and their checksums. */
-		case full
-		/** Check the files existence and their properties, but ignore the data. */
-		case properties
-		/** Only check the files existence. */
-		case existence
-
 	}
 	
 	static /*lazy*/ var logger: Logger = {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		
 		var ret = Logger(label: "main")
-		ret.logLevel = .debug
+		ret.logLevel = .info
 		return ret
 	}()
 	
@@ -80,7 +69,10 @@ struct LtsCheck : AsyncParsableCommand {
 	 Only files matching the regex are considered.
 	 If the regex is `nil`, all files are considered.
 	 
-	 The matching is done on the full relative path, which is always guaranteed to start with “`./`”. */
+	 The matching is done on the full relative path, which is always guaranteed to start with “`./`”.
+	 If the relative path is a directory, the path is guaranteed to end with a slash.
+	 
+	 - Important: If a directory do not match, all of its descendants will be skipped. */
 	@Option @RegexByArg
 	var pathRegexFilter: NSRegularExpression? = nil
 	
@@ -101,13 +93,72 @@ struct LtsCheck : AsyncParsableCommand {
 	var checkedPaths: [String]
 	
 	func run() async throws {
+		if verbose {
+			Self.logger.logLevel = .debug
+		}
+		
 		if #available(macOS 13, *) {
 			Self.logger.info("Note to the dev: use Regex instead of NSRegularExpression!")
 		}
 		
-		let db = try Db(dbPath: dbFilePath)
-		try db.write(to: dbFilePath)
-//		print(checkedPaths)
+		let relativeRef = URL(fileURLWithPath: forcedRelativeReference ?? dbFilePath)
+		
+		switch action {
+			case .listFiles:
+				/* TODO: Read the db file directly maybe, to avoid having everything in memory. */
+				let db = try Db(dbPath: dbFilePath)
+				for (path, _) in db.entries {
+					print(path)
+				}
+				
+			case .removeMissingFiles:
+				var db = try Db(dbPath: dbFilePath)
+				let fm = FileManager.default
+				db.entries = db.entries.filter{ path, _ in
+					var isDir = ObjCBool(false)
+					if !fm.fileExists(atPath: path, isDirectory: &isDir) || isDir.boolValue {
+						Self.logger.info("Removing path from db", metadata: ["path": "\(path)"])
+						return false
+					}
+					return true
+				}
+				try db.write(to: dbFilePath)
+				
+			case .check:
+				let db = try Db(dbPath: dbFilePath)
+				for (_, entry) in db.entries {
+					if let failure = try entry.check(mode: checkMode, relativeRef: relativeRef) {
+						print("\(entry.relativePath): check failed: \(failure)")
+					}
+				}
+				
+			case .checkAndUpdateWithOverride:
+				var db = try Db(dbPath: dbFilePath)
+				db.entries = try db.entries.filter{ _, entry in
+					if let failure = try entry.check(mode: checkMode, relativeRef: relativeRef) {
+						print("\(entry.relativePath): check failed: \(failure)")
+						return false
+					}
+					return true
+				}
+				try db.addEntries(from: checkedPaths, relativeRef: relativeRef, pathRegexFilter: pathRegexFilter, negativePathRegexFilter: negativePathRegexFilter)
+				try db.write(to: dbFilePath)
+				
+			case .checkAndUpdate:
+				var db = try Db(dbPath: dbFilePath)
+				for (_, entry) in db.entries {
+					if let failure = try entry.check(mode: checkMode, relativeRef: relativeRef) {
+						print("\(entry.relativePath): check failed: \(failure)")
+					}
+				}
+				try db.addEntries(from: checkedPaths, relativeRef: relativeRef, pathRegexFilter: pathRegexFilter, negativePathRegexFilter: negativePathRegexFilter)
+				try db.write(to: dbFilePath)
+				
+			case .rebuild:
+				var db = Db()
+				try db.addEntries(from: checkedPaths, relativeRef: relativeRef, pathRegexFilter: pathRegexFilter, negativePathRegexFilter: negativePathRegexFilter)
+				try db.write(to: dbFilePath)
+		}
 	}
 	
 	struct Err : Error, CustomStringConvertible {
