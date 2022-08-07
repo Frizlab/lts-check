@@ -3,9 +3,10 @@
  * Created by François Lamboley on 2022/08/06.
  */
 
+import CryptoKit
 import Foundation
 
-import CryptoKit
+import StreamReader
 
 
 
@@ -85,7 +86,16 @@ struct DbEntry : Codable {
 	private static func computeChecksum(of url: URL, algo: ChecksumAlgo) throws -> String {
 		switch algo {
 			case .sha256:
-				return try SHA256.hash(data: Data(contentsOf: url)).reduce("", { $0 + String(format: "%02x", $1) }).lowercased()
+				var hasher = SHA256()
+				let bufferSize = 512 * 1024 * 1024
+				let reader = try FileHandleReader(stream: FileHandle(forReadingFrom: url), bufferSize: bufferSize, bufferSizeIncrement: 1/* 0 is not allowed. */)
+				var count = 0
+				repeat {
+					try autoreleasepool{
+						count = try reader.readData(size: bufferSize, allowReadingLess: true, { hasher.update(bufferPointer: $0); return $0.count })
+					}
+				} while count > 0
+				return hasher.finalize().reduce("", { $0 + String(format: "%02x", $1) }).lowercased()
 		}
 	}
 	

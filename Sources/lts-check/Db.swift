@@ -26,7 +26,7 @@ struct Db {
 		}
 		
 		let fh = try FileHandle(forReadingFrom: URL(fileURLWithPath: dbPath))
-		try self.init(stream: FileHandleReader(stream: fh, bufferSize: 5 * 1024, bufferSizeIncrement: 3 * 1024))
+		try self.init(stream: FileHandleReader(stream: fh, bufferSize: 5 * 1024 * 1024, bufferSizeIncrement: 3 * 1024 * 1024))
 	}
 	
 	init(stream: StreamReader) throws {
