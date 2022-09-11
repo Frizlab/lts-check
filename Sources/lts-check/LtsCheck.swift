@@ -113,10 +113,12 @@ struct LtsCheck : AsyncParsableCommand {
 			case .removeMissingFiles:
 				var db = try Db(dbPath: dbFilePath)
 				let fm = FileManager.default
-				db.entries = db.entries.filter{ path, _ in
+				db.entries = db.entries.filter{ relativePath, _ in
+					let url = URL(fileURLWithPath: relativePath, relativeTo: relativeRef)
+					
 					var isDir = ObjCBool(false)
-					if !fm.fileExists(atPath: path, isDirectory: &isDir) || isDir.boolValue {
-						Self.logger.info("Removing path from db", metadata: ["path": "\(path)"])
+					if !fm.fileExists(atPath: url.path, isDirectory: &isDir) || isDir.boolValue {
+						Self.logger.info("Removing path from db", metadata: ["path": "\(relativePath)"])
 						return false
 					}
 					return true
