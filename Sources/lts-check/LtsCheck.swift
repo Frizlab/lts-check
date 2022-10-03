@@ -14,7 +14,7 @@ import Logging
 @main
 struct LtsCheck : AsyncParsableCommand {
 	
-	enum Action : String, ExpressibleByArgument {
+	enum Action : String, CaseIterable, ExpressibleByArgument {
 		
 		/** Only list the files in the db, one path per line. */
 		case listFiles = "list-files"

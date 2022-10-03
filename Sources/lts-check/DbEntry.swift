@@ -12,7 +12,7 @@ import StreamReader
 
 struct DbEntry : Codable {
 	
-	enum ChecksumAlgo : String, Equatable, Codable, CustomStringConvertible {
+	enum ChecksumAlgo : String, CaseIterable, Equatable, Codable, CustomStringConvertible {
 		
 		case sha256
 		

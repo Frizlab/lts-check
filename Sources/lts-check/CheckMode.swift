@@ -9,7 +9,7 @@ import ArgumentParser
 
 
 
-enum CheckMode : String, ExpressibleByArgument {
+enum CheckMode : String, CaseIterable, ExpressibleByArgument {
 	
 	/** Verify the files existence, their properties (size, creation date, other) and their checksums. */
 	case full
