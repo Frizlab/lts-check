@@ -21,10 +21,7 @@ enum CheckMode : String, ExpressibleByArgument {
 	case existence
 	
 	var checkExistence: Bool {
-		switch self {
-			case .full, .existence:  return true
-			case .data, .properties: return false
-		}
+		return true
 	}
 	
 	var checkProperties: Bool {
