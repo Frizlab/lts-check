@@ -116,7 +116,7 @@ struct Db {
 				throw Err.cannotGetSymbolicLinkStatus
 			}
 			guard !isLink else {
-				LtsCheck.logger.debug("Skipping link", metadata: ["path": "\(fileURL.path)"])
+				LtsCheck.logger.trace("Skipping link", metadata: ["path": "\(fileURL.path)"])
 				continue
 			}
 			
@@ -136,7 +136,7 @@ struct Db {
 			guard pathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) != nil || pathRegexFilter == nil,
 					negativePathRegexFilter?.firstMatch(in: relativePath, range: relativePathNSRange) == nil
 			else {
-				LtsCheck.logger.debug("Skipping file", metadata: ["path": "\(relativePath)"])
+				LtsCheck.logger.trace("Skipping file", metadata: ["path": "\(relativePath)"])
 				if isDirectory {
 					enumerator.skipDescendants()
 				}
