@@ -89,7 +89,7 @@ struct LtsCheck : AsyncParsableCommand {
 	@Argument(completion: .file(extensions: ["ltsc"]))
 	var dbFilePath: String
 	
-	@Argument(completion: .file())
+	@Argument(completion: .directory)
 	var checkedPaths: [String]
 	
 	func run() async throws {
